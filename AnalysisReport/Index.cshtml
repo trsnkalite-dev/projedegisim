@@ -1,0 +1,331 @@
+﻿@model List<ResultAnalysisReportDto>
+
+
+
+
+@{
+    ViewData["Title"] = "Analiz Raporları";
+}
+
+<style>
+    .report-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        background-color: #fff;
+        transition: box-shadow 0.3s ease;
+    }
+
+    .report-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .report-card.uygun {
+        background-color: #e8f5e9;
+        border-color: #c8e6c9;
+    }
+
+    .report-card.uygun-degil {
+        background-color: #ffebee;
+        border-color: #ffcdd2;
+        border-left: 5px solid #dc3545;
+    }
+
+    .report-header {
+        border-bottom: 1px solid #f0f0f0;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+
+    .report-no {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #333;
+    }
+
+    .report-date {
+        font-size: 0.85rem;
+        color: #888;
+    }
+
+    .report-info {
+        font-size: 0.9rem;
+        color: #555;
+    }
+
+    .report-actions {
+        display: flex;
+        gap: 5px;
+        justify-content: flex-end;
+    }
+
+    .year-section {
+        margin-top: 30px;
+    }
+
+    .year-title {
+        border-left: 5px solid #007bff;
+        padding-left: 15px;
+        margin-bottom: 20px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .month-section {
+        margin-left: 20px;
+        margin-bottom: 30px;
+    }
+
+    .month-title {
+        color: #555;
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .month-title::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: #eee;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-list-ul fs-3"></i>
+            <h2 class="mb-0">Analiz Raporları</h2>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#uploadCsvModal">
+                <i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV Yükle
+            </button>
+            <a href="/AnalysisReport/Dashboard" class="btn btn-outline-primary">
+                <i class="bi bi-graph-up me-2"></i>İstatistikler
+            </a>
+            <a href="/AnalysisReport/Create/" class="btn btn-dark">
+                <i class="bi bi-plus-lg me-2"></i>Yeni Rapor Oluştur
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtreleme Alanı -->
+    <div class="card shadow-sm mb-4 border-0 bg-light">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold"><i class="bi bi-calendar-event me-1"></i> Yıl Seçin</label>
+                    <select id="indexYearSelector" class="form-select shadow-none border-secondary-subtle">
+                        <option value="all">Tüm Yıllar</option>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var year in Model.Select(x => x.ReportDate.Year).Distinct().OrderByDescending(y => y))
+                            {
+                                <option value="@year">@year</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-9">
+                    <label class="form-label fw-bold"><i class="bi bi-calendar-month me-1"></i> Aylar</label>
+                    <div class="d-flex flex-wrap gap-3 mt-1">
+                        @{
+                            string[] aylar = { "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık" };
+                            for (int i = 0; i < 12; i++)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input month-checkbox" type="checkbox" value="@(i + 1)" id="month_@(i + 1)" checked>
+                                    <label class="form-check-label small" for="month_@(i + 1)">
+                                        @aylar[i]
+                                    </label>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        var groupedByYear = Model.GroupBy(x => x.ReportDate.Year).OrderByDescending(g => g.Key);
+
+        foreach (var yearGroup in groupedByYear)
+        {
+            <div class="year-section" data-year="@yearGroup.Key">
+
+                <h3 class="year-title">@yearGroup.Key Yılı</h3>
+
+                @{
+                    var groupedByMonth = yearGroup.GroupBy(x => x.ReportDate.Month).OrderByDescending(g => g.Key);
+                }
+
+                @foreach (var monthGroup in groupedByMonth)
+                {
+                    <div class="month-section" data-month="@monthGroup.Key">
+                        <h4 class="month-title">
+                            @System.Globalization.DateTimeFormatInfo.CurrentInfo.GetMonthName(monthGroup.Key)
+                        </h4>
+
+                        <div class="row">
+                            @foreach (var report in monthGroup.OrderByDescending(r => r.ReportDate))
+                            {
+                                <div class="col-md-6">
+                                    <div class="report-card @(report.Sonuc == "Uygun" ? "uygun" : report.Sonuc == "Uygun Değil" ? "uygun-degil" : "")">
+                                        <div class="d-flex justify-content-between align-items-start report-header">
+                                            <div>
+                                                <div class="report-no">@report.ReportNo</div>
+                                                <div class="report-date">@report.ReportDate.ToString("dd.MM.yyyy HH:mm:ss")</div>
+                                            </div>
+                                        </div>
+                                        <div class="report-info mb-3">
+                                            <div>@report.AnalysisType</div>
+                                            <div class="mt-2">
+
+                                                <strong>Analizler:<span class="fw-normal">@report.ProductName </span></strong>
+                                              
+
+                                                @if (report.Analyses != null && report.Analyses.Any())
+                                                {
+                                                    <ul class="mb-1 mt-1 ps-3">
+                                                        @foreach (var analiz in report.Analyses)
+                                                        {
+                                                            <li>
+                                                                <span class="fw-bold">@analiz.AnalysisName</span> :
+                                                                @analiz.Result
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                }
+
+                                            </div>
+
+                                        </div>
+                                        <div class="report-actions">
+                                            @if (report.Sonuc == "Uygun Değil")
+                                            {
+                                                <a href="/CorrectiveAction/Create" class="btn btn-warning btn-sm px-3">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i> Düzeltici Faaliyet
+                                                </a>
+                                            }
+                                            <a asp-action="Details" asp-route-id="@report.Id" class="btn btn-outline-primary btn-sm px-3">
+                                                <i class="bi bi-printer me-1"></i> Listele
+                                            </a>
+                                            <a asp-action="Update" asp-route-id="@report.Id"
+                                               class="btn btn-sm btn-outline-success  d-flex align-items-center justify-content-center gap-1 py-2 rounded-2">
+                                                <i class="bi bi-pencil-square"></i> Güncelle
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@report.Id"
+                                               class="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-center px-3 py-2 rounded-2"
+                                               onclick="return confirm('Bu raporu silmek istediğinize emin misiniz?')">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <div class="alert alert-info" id="noReportsAlert">Henüz kayıtlı rapor bulunmamaktadır.</div>
+    }
+    <div id="noResultsAlert" class="alert alert-warning d-none">Seçilen kriterlere uygun rapor bulunamadı.</div>
+</div>
+
+<!-- CSV Upload Modal -->
+<div class="modal fade" id="uploadCsvModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV Dosyası Yükle</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <label class="form-label fw-bold">1. Rapor Ana Verileri</label>
+                    <form asp-action="UploadAnalysisReportCsv" method="post" enctype="multipart/form-data">
+                        <div class="input-group">
+                            <input type="file" name="file" class="form-control" accept=".csv" required>
+                            <button class="btn btn-success" type="submit">Yükle</button>
+                        </div>
+                        <small class="text-muted">Ayrıcı: (;), Sütunlar: ID; RaporNo; Tarih; Tip; Ürün; Lokasyon; ÜretimT; STT; Parti; Sonuç</small>
+                    </form>
+                </div>
+                <hr>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">2. Analiz Detayları (Madde-Madde)</label>
+                    <form asp-action="UploadAnalysisItemsCsv" method="post" enctype="multipart/form-data">
+                        <div class="input-group">
+                            <input type="file" name="file" class="form-control" accept=".csv" required>
+                            <button class="btn btn-primary" type="submit">Yükle</button>
+                        </div>
+                        <small class="text-muted">Sütunlar: AnalizAdı; Limit; Sonuç; Onay; RaporID (Veya RaporNo ilk sütun)</small>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            function filterReports() {
+                const selectedYear = $('#indexYearSelector').val();
+                const selectedMonths = $('.month-checkbox:checked').map(function () {
+                    return parseInt($(this).val());
+                }).get();
+
+                let visibleYearCount = 0;
+
+                $('.year-section').each(function () {
+                    const year = $(this).data('year').toString();
+                    const yearMatch = (selectedYear === 'all' || year === selectedYear);
+                    
+                    if (yearMatch) {
+                        let visibleMonthCount = 0;
+                        $(this).find('.month-section').each(function() {
+                            const month = parseInt($(this).data('month'));
+                            const monthMatch = selectedMonths.includes(month);
+                            
+                            if (monthMatch) {
+                                $(this).show();
+                                visibleMonthCount++;
+                            } else {
+                                $(this).hide();
+                            }
+                        });
+                        
+                        if (visibleMonthCount > 0) {
+                            $(this).show();
+                            visibleYearCount++;
+                        } else {
+                            $(this).hide();
+                        }
+                    } else {
+                        $(this).hide();
+                    }
+                });
+
+                if (visibleYearCount === 0 && $('.year-section').length > 0) {
+                    $('#noResultsAlert').removeClass('d-none');
+                } else {
+                    $('#noResultsAlert').addClass('d-none');
+                }
+            }
+
+            $('#indexYearSelector').on('change', filterReports);
+            $('.month-checkbox').on('change', filterReports);
+        });
+    </script>
+}
