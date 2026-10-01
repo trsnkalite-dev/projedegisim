@@ -1,0 +1,210 @@
+﻿<div class="modal fade"
+     id="createModal"
+     tabindex="-1"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+
+                <h5 class="modal-title">
+                    <i class="bi bi-gear-fill"></i>
+                    Yeni Üretim
+                </h5>
+
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+            <form id="createForm">
+
+                <div class="modal-body">
+
+                    <input type="hidden" id="Id" />
+
+                    <div class="row">
+
+                        <div class="col-md-5">
+
+                            <label class="form-label">
+
+                                Reçete
+
+                            </label>
+
+                            <select id="RecipeId"
+                                    class="form-select">
+
+                                <option value="">
+                                    Seçiniz
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        <div class="col-md-3">
+
+                            <label class="form-label">
+
+                                Planlanan Kg
+
+                            </label>
+
+                            <input id="PlannedQuantity"
+                                   type="number"
+                                   step="0.001"
+                                   class="form-control" />
+
+                        </div>
+
+                        <div class="col-md-4">
+
+                            <label class="form-label">
+
+                                Üretim Tarihi
+
+                            </label>
+
+                            <input id="ProductionDate"
+                                   type="date"
+                                   class="form-control" />
+
+                        </div>
+
+                    </div>
+
+                    <div class="row mt-3">
+
+                        <div class="col-md-12">
+
+                            <label class="form-label">
+
+                                Açıklama
+
+                            </label>
+
+                            <textarea id="Description"
+                                  rows="3"
+                                      class="form-control">
+                            </textarea>
+
+                        </div>
+
+                    </div>
+
+                    <hr />
+
+                    <div class="card">
+
+                        <div class="card-header bg-light">
+
+                            <strong>
+
+                                Hammadde Tüketimi
+
+                            </strong>
+
+                        </div>
+
+                        <div class="card-body p-0">
+
+                            <table class="table table-bordered table-hover table-sm mb-0">
+
+                                <thead class="table-light">
+
+                                    <tr>
+
+                                        <th style="width:120px">
+                                            Kod
+                                        </th>
+
+                                        <th>
+                                            Hammadde
+                                        </th>
+
+                                        <th class="text-end"
+                                            style="width:110px">
+
+                                            İhtiyaç
+
+                                        </th>
+
+                                        <th style="width:250px">
+
+                                            Lot
+
+                                        </th>
+
+                                        <th class="text-end"
+                                            style="width:110px">
+
+                                            Mevcut
+
+                                        </th>
+
+                                        <th class="text-end"
+                                            style="width:120px">
+
+                                            Kullanılacak
+
+                                        </th>
+
+                                        <th class="text-center"
+                                            style="width:110px">
+
+                                            Durum
+
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody id="consumptionBody">
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+
+                        <i class="bi bi-x-circle"></i>
+
+                        Vazgeç
+
+                    </button>
+
+                    <button type="submit"
+                            id="btnSaveProduction"
+                            class="btn btn-success">
+
+                        <i class="bi bi-save"></i>
+
+                        Kaydet
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>

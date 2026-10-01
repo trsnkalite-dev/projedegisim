@@ -1,0 +1,307 @@
+﻿@model KaliteWeb.UI.Models.ProductionPackagings.CreateProductionPackagingViewModel
+@{
+    ViewData["Title"] = "Ürün Paketleme & Koli Barkodlama";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    
+    // Otomatik tekil koli numarası önermesi: P + YılAyGünSaatDakikaSaniye
+    var defaultPackageNo = string.IsNullOrWhiteSpace(Model.PackageNo)
+        ? $"P{DateTime.Now:yyMMddHHmmss}"
+        : Model.PackageNo;
+}
+
+<div class="container-fluid py-3">
+
+    <!-- ÜST BAŞLIK -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-1 fw-bold text-dark">
+                <i class="bi bi-box-seam text-primary me-2"></i>Ürün Paketleme & Koli Barkodu
+            </h4>
+            <div class="text-muted small">
+                Üretim Lotu: <strong class="text-dark">@Model.MainLotNo</strong> → Alt Parti: <strong class="text-primary">@Model.SubLotNo</strong>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a asp-controller="Production" asp-action="Detail" asp-route-id="@Model.ProductionNo" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Üretime Dön
+            </a>
+        </div>
+    </div>
+
+    <!-- HATA BİLDİRİMLERİ -->
+    <div asp-validation-summary="All" class="alert alert-danger @(ViewData.ModelState.IsValid ? "d-none" : "")"></div>
+
+    <!-- FORM BAŞLANGICI -->
+    <form asp-action="Create" method="post" id="packagingForm" novalidate>
+        @Html.AntiForgeryToken()
+
+        <!-- GİZLİ ALANLAR -->
+        <input asp-for="ProductionLotId" type="hidden" id="ProductionLotId" />
+        <input asp-for="ProductName" type="hidden" />
+        <input asp-for="MainLotNo" type="hidden" />
+        <input asp-for="ProductionNo" type="hidden" />
+        <input asp-for="LotQuantity" type="hidden" />
+        <input asp-for="PackagedQuantity" type="hidden" />
+        <input asp-for="DepoId" type="hidden" />
+        <input asp-for="DepoAdi" type="hidden" />
+
+        <div class="row g-3">
+            <!-- SOL KOLON: PARTİ BİLGİLERİ VE DURUM -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-header bg-dark text-white fw-bold py-3">
+                        <i class="bi bi-diagram-3 me-1"></i> Parti & Stok Durumu
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Mamul Ürün</label>
+                            <input type="text" class="form-control fw-bold bg-light" value="@Model.ProductName" readonly tabindex="-1" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Alt Lot No (Parti Künyesi)</label>
+                            <input asp-for="SubLotNo" id="SubLotNo" class="form-control fw-bold bg-light" readonly tabindex="-1" />
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label text-muted small">Parti Toplamı</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control bg-light text-end" value="@Model.LotQuantity.ToString("0.000")" readonly tabindex="-1" />
+                                    <span class="input-group-text small">kg</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label text-muted small">Paketlenen</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control bg-light text-end" value="@Model.PackagedQuantity.ToString("0.000")" readonly tabindex="-1" />
+                                    <span class="input-group-text small">kg</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted fw-bold">Kalan Paketlenmemiş:</span>
+                                <span class="badge bg-success fs-5" id="lblRemainingDisplay">@Model.RemainingQuantity.ToString("0.000") KG</span>
+                            </div>
+                            <input type="hidden"
+                                   id="remainingQuantity"
+                                   value="@Model.RemainingQuantity.ToString("0.000")"
+                                   data-remaining="@Model.RemainingQuantity.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="form-label text-muted small">Hedef Depo</label>
+                            <input type="text" class="form-control bg-light" value="@(string.IsNullOrWhiteSpace(Model.DepoAdi) ? "Mamul Soğuk Hava Deposu" : Model.DepoAdi)" readonly tabindex="-1" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SAĞ KOLON: KOLI TARTIMI & BARKOD GİRİŞİ -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-header bg-primary text-white fw-bold py-3 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-box me-1"></i> Yeni Koli Tartımı & Etiket Bilgisi</span>
+                        <span class="badge bg-light text-primary">Terazi Entegrasyonu Aktif</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <!-- TEKİL KOLİ / BARKOD NO -->
+                            <div class="col-md-6">
+                                <label asp-for="PackageNo" class="form-label fw-bold small text-dark">Koli / Paket Numarası *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-upc"></i></span>
+                                    <input asp-for="PackageNo"
+                                           id="PackageNo"
+                                           class="form-control fw-bold font-monospace"
+                                           value="@defaultPackageNo"
+                                           required />
+                                    <button class="btn btn-outline-secondary" type="button" onclick="generateNewPackageNo()" title="Yeni Numara Üret">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                </div>
+                                <span asp-validation-for="PackageNo" class="text-danger small"></span>
+                                <div class="form-text">Sevkiyat modülünde okutulacak tekil koli barkodudur.</div>
+                            </div>
+
+                            <!-- PAKETLEME TARİHİ -->
+                            <div class="col-md-6">
+                                <label asp-for="PackagingDate" class="form-label fw-bold small text-dark">Paketleme Tarih / Saat</label>
+                                <input asp-for="PackagingDate"
+                                       type="datetime-local"
+                                       step="1"
+                                       value="@Model.PackagingDate.ToString("yyyy-MM-ddTHH:mm:ss")"
+                                       class="form-control" />
+                            </div>
+
+                            <!-- TARTIM BÖLÜMÜ: BRÜT, DARA, NET -->
+                            <div class="col-12">
+                                <div class="p-3 bg-light rounded-3 border">
+                                    <div class="row g-2 align-items-center">
+                                        <div class="col-md-4">
+                                            <label class="form-label text-muted small fw-bold">Brüt Ağırlık (Kg)</label>
+                                            <input type="number" step="0.001" id="txtGross" class="form-control text-end" placeholder="0.000" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label text-muted small fw-bold">Koli Darası (Kg)</label>
+                                            <input type="number" step="0.001" id="txtTare" class="form-control text-end" value="0.000" placeholder="0.500" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label asp-for="Quantity" class="form-label text-success small fw-bold">Net Tartım (Kg) *</label>
+                                            <div class="input-group">
+                                                <input asp-for="Quantity"
+                                                       id="quantity"
+                                                       type="number"
+                                                       step="0.001"
+                                                       min="0.001"
+                                                       class="form-control form-control-lg fw-bold text-end text-success"
+                                                       placeholder="0.000"
+                                                       required />
+                                                <span class="input-group-text fw-bold">KG</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="quantityWarning" class="text-danger small mt-2 d-none">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Paket net miktarı, kalan miktardan (@Model.RemainingQuantity.ToString("0.000") Kg) büyük olamaz.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ÜRÜN SICAKLIĞI (HACCP / SOĞUK ZİNCİR) -->
+                            <div class="col-md-6">
+                                <label asp-for="ProductTemperature" class="form-label text-muted small fw-bold">Ürün Çıkış Sıcaklığı</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-thermometer-half"></i></span>
+                                    <input asp-for="ProductTemperature" type="number" step="0.1" class="form-control text-end" placeholder="+2.0" />
+                                    <span class="input-group-text">°C</span>
+                                </div>
+                                <div class="form-text">Maksimum +4°C tavsiye edilir.</div>
+                            </div>
+
+                            <!-- SORUMLU HAT / ALAN -->
+                            <div class="col-md-6">
+                                <label asp-for="ResponsibleAreaId" class="form-label text-muted small fw-bold">Paketleme Hattı / Alan</label>
+                                <select asp-for="ResponsibleAreaId" class="form-select">
+                                    <option value="2" selected>Paketleme Hattı 1</option>
+                                    <option value="1">Kıymalı Ürünler Hattı</option>
+                                    <option value="3">Vakumlu Paketleme</option>
+                                </select>
+                            </div>
+
+                            <!-- AÇIKLAMA -->
+                            <div class="col-12">
+                                <label asp-for="Description" class="form-label text-muted small">Açıklama / Paketleme Notu</label>
+                                <textarea asp-for="Description" class="form-control" rows="2" placeholder="Koli adedi, etiketleme veya operatör notu..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="chkAutoPrint" checked>
+                            <label class="form-check-label small fw-bold text-dark" for="chkAutoPrint">
+                                Kaydet Sonrası Zebra Koli Etiketi Yazdır
+                            </label>
+                        </div>
+
+                        <button type="submit" id="btnPaketle" class="btn btn-success btn-lg px-5 fw-bold shadow-sm">
+                            <i class="bi bi-printer-fill me-1"></i> PAKETLE VE ETİKET BAS
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("packagingForm");
+        const packageNoInput = document.getElementById("PackageNo");
+        const quantityInput = document.getElementById("quantity");
+        const grossInput = document.getElementById("txtGross");
+        const tareInput = document.getElementById("txtTare");
+        const remainingEl = document.getElementById("remainingQuantity");
+        const warningEl = document.getElementById("quantityWarning");
+        const submitBtn = document.getElementById("btnPaketle");
+
+        const maxRemaining = remainingEl ? (parseFloat(remainingEl.dataset.remaining) || 0) : 0;
+
+        // Brüt ve Daradan Net Kilogramı Hesapla
+        function calculateNet() {
+        const gross = parseFloat(grossInput.value) || 0;
+        const tare = parseFloat(tareInput.value) || 0;
+        if (gross > 0) {
+        const net = Math.max(0, gross - tare);
+        quantityInput.value = net.toFixed(3);
+        validateQuantity();
+        }
+        }
+
+        if (grossInput) grossInput.addEventListener("input", calculateNet);
+        if (tareInput) tareInput.addEventListener("input", calculateNet);
+
+        // Kalan miktar aşıldı mı kontrolü
+        function validateQuantity() {
+        if (!quantityInput) return;
+        const entered = parseFloat(quantityInput.value) || 0;
+
+        if (entered > maxRemaining && maxRemaining > 0) {
+        warningEl.classList.remove("d-none");
+        submitBtn.disabled = true;
+        } else {
+        warningEl.classList.add("d-none");
+        submitBtn.disabled = false;
+        }
+        }
+
+        if (quantityInput) {
+        quantityInput.addEventListener("input", validateQuantity);
+        }
+
+        // Yeni tekil koli numarası üretme butonu
+        window.generateNewPackageNo = function() {
+        const date = new Date();
+        const yy = date.getFullYear().toString().slice(-2);
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const hh = String(date.getHours()).padStart(2, '0');
+        const mi = String(date.getMinutes()).padStart(2, '0');
+        const ss = String(date.getSeconds()).padStart(2, '0');
+        packageNoInput.value = `P${yy}${mm}${dd}${hh}${mi}${ss}`;
+        };
+
+        // Form Submit Kontrolü
+        if (form) {
+        form.addEventListener("submit", function (e) {
+        const entered = parseFloat(quantityInput?.value) || 0;
+
+        if (!packageNoInput.value.trim()) {
+        e.preventDefault();
+        Swal.fire('Eksik Bilgi', 'Koli / Paket Numarası boş olamaz.', 'warning');
+        return;
+        }
+
+        if (entered <= 0) {
+        e.preventDefault();
+        Swal.fire('Eksik Bilgi', 'Lütfen geçerli bir paket miktarı (Kg) giriniz.', 'warning');
+        return;
+        }
+
+        if (entered > maxRemaining && maxRemaining > 0) {
+        e.preventDefault();
+        Swal.fire('Hata', 'Paket miktarı kalan miktardan büyük olamaz.', 'error');
+        return;
+        }
+        });
+        }
+        });
+    </script>
+}

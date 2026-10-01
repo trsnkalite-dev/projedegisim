@@ -1,0 +1,214 @@
+﻿@using Kalite.Domain.Enums
+@model List<Kalite.Contracts.Production.Responses.ProductionListDto>
+
+
+<div class="card shadow-sm">
+
+    <div class="card-body p-0">
+
+        <table class="table table-hover table-bordered align-middle mb-0">
+
+            <thead class="table-light">
+
+                <tr>
+
+                    <th width="120">Üretim No</th>
+
+                    <th width="110">Tarih</th>
+
+                    <th>Reçete</th>
+
+                    <th>Mamul</th>
+
+                    <th class="text-end" width="110">Planlanan</th>
+
+                    <th class="text-end" width="110">Üretilen</th>
+
+                    <th width="120">Durum</th>
+
+                    <th width="320" class="text-center">İşlemler</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @if (!Model.Any())
+                {
+                    <tr>
+
+                        <td colspan="8" class="text-center text-muted py-4">
+
+                            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+
+                            Kayıt bulunamadı.
+
+                        </td>
+
+                    </tr>
+                }
+
+                @foreach (var item in Model)
+                {
+                    <tr>
+
+                        <td>
+                            <strong>@item.ProductionNo</strong>
+                        </td>
+
+                        <td>
+                            @item.ProductionDate.ToString("dd.MM.yyyy")
+                        </td>
+
+                        <td>
+                            @item.RecipeName
+                        </td>
+
+                        <td>
+                            @item.FinishedStockName
+                        </td>
+
+                        <td class="text-end">
+                            @item.PlannedQuantity.ToString("N3")
+                        </td>
+
+                        <td class="text-end">
+                            @item.ProducedQuantity.ToString("N3")
+                        </td>
+
+                        <td>
+
+                            @switch (item.Status)
+                            {
+                                case ProductionStatus.Planned:
+                                    <span class="badge bg-warning text-dark">
+                                        Planlandı
+                                    </span>
+                                    break;
+
+                                case ProductionStatus.Started:
+                                    <span class="badge bg-primary">
+                                        Üretimde
+                                    </span>
+                                    break;
+
+                                case ProductionStatus.Completed:
+                                    <span class="badge bg-success">
+                                        Tamamlandı
+                                    </span>
+                                    break;
+
+                                case ProductionStatus.Cancelled:
+                                    <span class="badge bg-danger">
+                                        İptal
+                                    </span>
+                                    break;
+                            }
+
+                        </td>
+
+                        <td class="text-center">
+
+                            <div class="btn-group btn-group-sm">
+
+                                @if (item.Status == ProductionStatus.Planned)
+                                {
+                                    <button type="button"
+                                            class="btn btn-warning editBtn"
+                                            data-id="@item.Id"
+                                            title="Düzenle">
+
+                                        <i class="bi bi-pencil"></i>
+
+                                    </button>
+
+                                    <button type="button"
+                                            class="btn btn-success startBtn"
+                                            data-id="@item.Id"
+                                            title="Üretimi Başlat">
+
+                                        <i class="bi bi-play-fill"></i>
+
+                                    </button>
+
+                                    <button type="button"
+                                            class="btn btn-danger deleteBtn"
+                                            data-id="@item.Id"
+                                            title="Sil">
+
+                                        <i class="bi bi-trash"></i>
+
+                                    </button>
+                                }
+
+                                @if (item.Status == ProductionStatus.Started)
+                                {
+                                    <button class="btn btn-info detailBtn"
+                                            data-id="@item.Id"
+                                            title="Detay">
+
+                                        <i class="bi bi-eye"></i>
+
+                                    </button>
+
+                                    <button class="btn btn-primary completeBtn"
+                                            data-id="@item.Id"
+                                            title="Üretimi Tamamla">
+
+                                        <i class="bi bi-check2-circle"></i>
+
+                                    </button>
+                                }
+
+                                @if (item.Status == ProductionStatus.Completed)
+                                {
+                                    <button class="btn btn-info detailBtn"
+                                            data-id="@item.Id"
+                                            title="Detay">
+
+                                        <i class="bi bi-eye"></i>
+
+                                    </button>
+
+                                    <button class="btn btn-secondary labelBtn"
+                                            data-id="@item.OutputGoodsReceiptId"
+                                            title="Etiket Yazdır">
+
+                                        <i class="bi bi-printer"></i>
+
+                                    </button>
+                                    <a class="btn btn-outline-success"
+                                           href="@Url.Action("Index", "Traceability", new { lotNo = item.LotNo })"
+                                           title="İzlenebilirlik">
+
+                                        <i class="bi bi-diagram-3"></i>
+
+                                    </a>
+                                }
+
+                                @if (item.Status == ProductionStatus.Cancelled)
+                                {
+                                    <button class="btn btn-info detailBtn"
+                                            data-id="@item.Id"
+                                            title="Detay">
+
+                                        <i class="bi bi-eye"></i>
+
+                                    </button>
+                                }
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>

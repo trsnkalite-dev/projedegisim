@@ -1,0 +1,679 @@
+﻿@model IReadOnlyCollection<Kalite.Application.Features.ProductionPackagings.Queries.GetList.ProductionPackagingListDto>
+
+@{
+    ViewData["Title"] = "Üretim Paketlemeleri";
+}
+
+<style>
+    /* İşlem Butonları Ortak Düzeni */
+    .action-btn-group {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .btn-action {
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        font-size: 14px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        background-color: #f8fafc;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+    .btn-action-trace {
+        color: #0891b2;
+        border-color: #cffafe;
+        background-color: #ecfeff;
+    }
+
+        .btn-action-trace:hover {
+            background-color: #0891b2;
+            color: #ffffff;
+            border-color: #0891b2;
+        }
+
+    .btn-action-view {
+        color: #475569;
+        border-color: #e2e8f0;
+        background-color: #f1f5f9;
+    }
+
+        .btn-action-view:hover {
+            background-color: #475569;
+            color: #ffffff;
+            border-color: #475569;
+        }
+
+    .btn-action-edit {
+        color: #2563eb;
+        border-color: #dbeafe;
+        background-color: #eff6ff;
+    }
+
+        .btn-action-edit:hover {
+            background-color: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+        }
+
+    .btn-action-delete {
+        color: #e11d48;
+        border-color: #ffe4e6;
+        background-color: #fff1f2;
+    }
+
+        .btn-action-delete:hover {
+            background-color: #e11d48;
+            color: #ffffff;
+            border-color: #e11d48;
+        }
+
+    /* Tıklanabilir Lot Rozeti */
+    .btn-filter-lot {
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+        user-select: none;
+    }
+
+        .btn-filter-lot:hover {
+            background-color: #0d6efd !important;
+            transform: scale(1.05);
+        }
+</style>
+
+<div class="container-fluid px-3">
+
+    <!-- ===================================================== -->
+    <!-- BAŞLIK & ÜST EYLEMLER                                 -->
+    <!-- ===================================================== -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-2">
+            <h5 class="mb-0 fs-6 fw-bold">
+                <i class="bi bi-box-seam me-1"></i>
+                Üretim Paketlemeleri
+            </h5>
+
+            <div class="d-flex gap-2">
+                <a asp-controller="ProductionLot"
+                   asp-action="Index"
+                   class="btn btn-light btn-sm fw-semibold shadow-sm">
+                    <i class="bi bi-plus-circle me-1"></i>
+                    Yeni Paketleme
+                </a>
+            </div>
+        </div>
+
+        <!-- ===================================================== -->
+        <!-- AKILLI FİLTRELEME PANELİ (CLIENT-SIDE DYNAMIC)       -->
+        <!-- ===================================================== -->
+        <div class="card-body bg-light border-bottom py-3">
+            <div class="row g-2 align-items-center">
+
+                <!-- HIZLI ARAMA (Lot, Paket, Üretim No) -->
+                <div class="col-md-4 col-12">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white text-muted border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text"
+                               id="filterSearch"
+                               class="form-control border-start-0"
+                               placeholder="Üretim No, Lot No veya Paket No ile ara..." />
+                    </div>
+                </div>
+
+                <!-- DEPO FİLTRESİ -->
+                <div class="col-md-2 col-6">
+                    <select id="filterDepo" class="form-select form-select-sm">
+                        <option value="">Tüm Depolar</option>
+                        @if (Model != null)
+                        {
+                            var depols = Model.Where(x => !string.IsNullOrWhiteSpace(x.DepoAdi))
+                            .Select(x => x.DepoAdi)
+                            .Distinct()
+                            .OrderBy(x => x);
+                            foreach (var depo in depols)
+                            {
+                                <option value="@depo">@depo</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <!-- BAŞLANGIÇ TARİHİ -->
+                <div class="col-md-2 col-6">
+                    <input type="date" id="filterStartDate" class="form-control form-control-sm" title="Başlangıç Tarihi" />
+                </div>
+
+                <!-- BİTİŞ TARİHİ -->
+                <div class="col-md-2 col-6">
+                    <input type="date" id="filterEndDate" class="form-control form-control-sm" title="Bitiş Tarihi" />
+                </div>
+
+                <!-- TEMİZLE & BİLGİ BUTONU -->
+                <div class="col-md-2 col-6 d-flex gap-2">
+                    <button type="button" id="btnResetFilter" class="btn btn-outline-secondary btn-sm w-100">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Temizle
+                    </button>
+                </div>
+            </div>
+
+            <!-- ANLIK SONUÇ & MİKTAR ÖZETİ -->
+            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top text-muted small">
+                <div>
+                    Toplam <strong><span id="filteredCount">@(Model?.Count ?? 0)</span></strong> paket gösteriliyor.
+                </div>
+                <div>
+                    Filtrelenen Toplam Miktar: <strong><span id="filteredTotalQty" class="text-primary">0.00</span> kg</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================================================== -->
+        <!-- TABLO ALANI                                           -->
+        <!-- ===================================================== -->
+        <div class="card-body p-0">
+            @if (Model == null || !Model.Any())
+            {
+                <div class="alert alert-info d-flex align-items-center m-3">
+                    <i class="bi bi-info-circle fs-5 me-2"></i>
+                    <div>Henüz kayıtlı paketleme bulunmamaktadır.</div>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle mb-0 text-nowrap" id="packagingTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 14%;">Üretim No</th>
+                                <th style="width: 11%;">Ana Lot</th>
+                                <th style="width: 13%;">Alt Lot</th>
+                                <th style="width: 15%;">Paket No</th>
+                                <th class="text-end" style="width: 10%;">Miktar (Kg)</th>
+                                <th class="text-center" style="width: 9%;">Sıcaklık</th>
+                                <th style="width: 13%;">Paketleme Tarihi</th>
+                                <th style="width: 10%;">Depo</th>
+                                <th class="text-center" style="width: 5%; min-width: 160px;">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr class="packaging-row"
+                                    data-search="@($"{item.ProductionNo} {item.MainLotNo} {item.SubLotNo} {item.PackageNo}".ToLowerInvariant())"
+                                    data-depo="@(item.DepoAdi ?? "")"
+                                    data-qty="@item.Quantity.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                    data-date="@item.PackagingDate.ToString("yyyy-MM-dd")">
+
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(item.ProductionNo))
+                                        {
+                                            <strong>@item.ProductionNo</strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+
+                                    <!-- ANA LOT (Tıklanabilir Filtre Rozeti) -->
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(item.MainLotNo))
+                                        {
+                                            <span class="badge bg-secondary btn-filter-lot"
+                                                  data-lot="@item.MainLotNo"
+                                                  title="Tıkla: Bu Ana Lot ile filtrele">
+                                                <i class="bi bi-funnel-fill me-1 small"></i>@item.MainLotNo
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(item.SubLotNo))
+                                        {
+                                            <span class="badge bg-light text-dark border">@item.SubLotNo</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        <strong class="text-primary">@item.PackageNo</strong>
+                                    </td>
+
+                                    <td class="text-end fw-bold">
+                                        @item.Quantity.ToString("N2")
+                                    </td>
+
+                                    <td class="text-center">
+                                        @if (item.ProductTemperature.HasValue)
+                                        {
+                                            var temp = item.ProductTemperature.Value;
+                                            if (temp <= 4)
+                                            {
+                                                <span class="badge bg-success">@temp.ToString("N1") °C</span>
+                                            }
+                                            else if (temp <= 7)
+                                            {
+                                                <span class="badge bg-warning text-dark">@temp.ToString("N1") °C</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">@temp.ToString("N1") °C</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @item.PackagingDate.ToString("dd.MM.yyyy HH:mm")
+                                    </td>
+
+                                    <td>
+                                        @if (!string.IsNullOrWhiteSpace(item.DepoAdi))
+                                        {
+                                            <span class="badge bg-info text-dark">@item.DepoAdi</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Depo Yok</span>
+                                        }
+                                    </td>
+
+                                    <td class="text-center">
+                                        <div class="action-btn-group">
+                                            <button type="button"
+                                                    class="btn-action btn-action-trace btn-traceability"
+                                                    data-lot="@item.MainLotNo"
+                                                    title="İzlenebilirlik Soyağacı">
+                                                <i class="bi bi-diagram-3"></i>
+                                            </button>
+
+                                            <a asp-controller="ProductionPackaging"
+                                               asp-action="Details"
+                                               asp-route-id="@item.Id"
+                                               class="btn-action btn-action-view"
+                                               title="Detay">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+
+                                            <a asp-controller="ProductionPackaging"
+                                               asp-action="Edit"
+                                               asp-route-id="@item.Id"
+                                               class="btn-action btn-action-edit"
+                                               title="Düzenle">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+
+                                            <form asp-controller="ProductionPackaging"
+                                                  asp-action="Delete"
+                                                  asp-route-id="@item.Id"
+                                                  method="post"
+                                                  class="delete-form d-inline m-0 p-0">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.Id" />
+                                                <button type="button" class="btn-action btn-action-delete btn-delete" title="Paketi Sil">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                    <!-- EŞLEŞEN KAYIT BULUNAMADIĞINDA GÖRÜNECEK MESAJ -->
+                    <div id="noRecordsAlert" class="alert alert-warning text-center m-3 d-none">
+                        <i class="bi bi-search me-1"></i> Filtreleme kriterlerine uygun paketleme kaydı bulunamadı.
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- İZLENEBİLİRLİK MODAL PENCERESİ -->
+<div class="modal fade" id="traceabilityModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fs-6">
+                    <i class="bi bi-diagram-3 me-2"></i>
+                    Geriye Dönük İzlenebilirlik Soyağacı
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body bg-light" id="traceabilityBody">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">İzlenebilirlik soyağacı yükleniyor...</p>
+                </div>
+            </div>
+            <div class="modal-footer bg-white py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/delete.js" asp-append-version="true"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // ==========================================
+            // AKILLI FİLTRELEME ÇEKİRDEK MANTIĞI
+            // ==========================================
+            const searchInput = document.getElementById("filterSearch");
+            const depoSelect = document.getElementById("filterDepo");
+            const startDateInput = document.getElementById("filterStartDate");
+            const endDateInput = document.getElementById("filterEndDate");
+            const btnReset = document.getElementById("btnResetFilter");
+
+            const rows = document.querySelectorAll(".packaging-row");
+            const countEl = document.getElementById("filteredCount");
+            const totalQtyEl = document.getElementById("filteredTotalQty");
+            const noRecordsEl = document.getElementById("noRecordsAlert");
+
+            function applyFilter() {
+                const searchVal = (searchInput?.value || "").trim().toLowerCase();
+                const selectedDepo = (depoSelect?.value || "").trim();
+                const startDate = startDateInput?.value || "";
+                const endDate = endDateInput?.value || "";
+
+                let visibleCount = 0;
+                let totalQty = 0;
+
+                rows.forEach(row => {
+                    const rowSearch = (row.getAttribute("data-search") || "").toLowerCase();
+                    const rowDepo = (row.getAttribute("data-depo") || "").trim();
+                    const rowDate = row.getAttribute("data-date") || "";
+                    const rowQty = parseFloat(row.getAttribute("data-qty")) || 0;
+
+                    let isMatch = true;
+
+                    // 1. Arama Metni Kontrolü
+                    if (searchVal !== "" && !rowSearch.includes(searchVal)) {
+                        isMatch = false;
+                    }
+
+                    // 2. Depo Kontrolü
+                    if (isMatch && selectedDepo !== "" && rowDepo !== selectedDepo) {
+                        isMatch = false;
+                    }
+
+                    // 3. Tarih Aralığı Kontrolü
+                    if (isMatch && startDate !== "" && rowDate < startDate) {
+                        isMatch = false;
+                    }
+                    if (isMatch && endDate !== "" && rowDate > endDate) {
+                        isMatch = false;
+                    }
+
+                    if (isMatch) {
+                        row.style.display = "";
+                        visibleCount++;
+                        totalQty += rowQty;
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+
+                if (countEl) countEl.textContent = visibleCount;
+                if (totalQtyEl) totalQtyEl.textContent = totalQty.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                if (noRecordsEl) {
+                    noRecordsEl.classList.toggle("d-none", visibleCount > 0 || rows.length === 0);
+                }
+            }
+
+            if (searchInput) searchInput.addEventListener("input", applyFilter);
+            if (depoSelect) depoSelect.addEventListener("change", applyFilter);
+            if (startDateInput) startDateInput.addEventListener("change", applyFilter);
+            if (endDateInput) endDateInput.addEventListener("change", applyFilter);
+
+            if (btnReset) {
+                btnReset.addEventListener("click", function () {
+                    if (searchInput) searchInput.value = "";
+                    if (depoSelect) depoSelect.value = "";
+                    if (startDateInput) startDateInput.value = "";
+                    if (endDateInput) endDateInput.value = "";
+                    applyFilter();
+                });
+            }
+
+            // ==========================================
+            // ANA LOT TIKLAMA İLE DOĞRUDAN FİLTRELEME
+            // ==========================================
+            document.querySelectorAll(".btn-filter-lot").forEach(badge => {
+                badge.addEventListener("click", function () {
+                    const lotValue = this.getAttribute("data-lot");
+                    if (lotValue && searchInput) {
+                        searchInput.value = lotValue;
+                        applyFilter();
+                        searchInput.focus();
+                    }
+                });
+            });
+
+            // Sayfa ilk yüklendiğinde filtreyi ve toplamları hesapla
+            applyFilter();
+
+            // ==========================================
+            // İZLENEBİLİRLİK MODAL YÖNETİMİ
+            // ==========================================
+            const modalEl = document.getElementById("traceabilityModal");
+            const modal = new bootstrap.Modal(modalEl);
+            const bodyEl = document.getElementById("traceabilityBody");
+
+            document.querySelectorAll(".btn-traceability").forEach(btn => {
+                btn.addEventListener("click", async function () {
+                    const lotNo = this.getAttribute("data-lot");
+                    if (!lotNo) {
+                        alert("İzlenecek Lot No bilgisi bulunamadı.");
+                        return;
+                    }
+
+                    modal.show();
+                    bodyEl.innerHTML = `
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2 text-muted">Lot [<strong>${lotNo}</strong>] izlenebilirlik zinciri taranıyor...</p>
+                        </div>`;
+
+                    try {
+                        const response = await fetch(`/ProductionPackaging/GetTraceability?lotNo=${encodeURIComponent(lotNo)}`);
+                        if (!response.ok) {
+                            const err = await response.text();
+                            throw new Error(err || "İzlenebilirlik verisi alınamadı.");
+                        }
+
+                        const data = await response.json();
+                        renderTraceability(data);
+                    } catch (err) {
+                        bodyEl.innerHTML = `
+                            <div class="alert alert-danger my-3">
+                                <i class="bi bi-exclamation-octagon-fill me-2"></i> ${err.message}
+                            </div>`;
+                    }
+                });
+            });
+
+            function renderTraceability(dto) {
+                let html = `
+                    <div class="card mb-3 border-0 shadow-sm">
+                        <div class="card-header bg-white fw-bold text-primary border-bottom">
+                            <i class="bi bi-box-seam me-1"></i> Ürün & Lot Bilgisi
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Sorgulanan Lot No</small>
+                                    <span class="badge bg-secondary fs-6">${dto.lotNo || "-"}</span>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Ürün Adı</small>
+                                    <strong>${dto.finishedProduct || "-"}</strong>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Miktar</small>
+                                    <strong>${dto.quantity ? Number(dto.quantity).toFixed(2) : "0.00"} kg</strong>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">İzlenebilirlik Tipi</small>
+                                    <span class="badge bg-info text-dark">${dto.traceabilityType || "-"}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                if (dto.carcassCuttings && dto.carcassCuttings.length > 0) {
+                    html += `
+                        <div class="card mb-3 border-0 shadow-sm">
+                            <div class="card-header bg-white fw-bold text-dark border-bottom">
+                                <i class="bi bi-scissors me-1 text-danger"></i> Parçalama Operasyonları (${dto.carcassCuttings.length} Adet)
+                            </div>
+                            <div class="card-body p-0 table-responsive">
+                                <table class="table table-sm table-striped mb-0 align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Parçalama No</th>
+                                            <th>Tarih</th>
+                                            <th>Karkas No</th>
+                                            <th class="text-end">Giriş (kg)</th>
+                                            <th class="text-end">Çıktı (kg)</th>
+                                            <th class="text-center">Randıman</th>
+                                            <th>Depo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${dto.carcassCuttings.map(c => `
+                                            <tr>
+                                                <td><strong>${c.cuttingNo}</strong></td>
+                                                <td>${c.cuttingDate ? new Date(c.cuttingDate).toLocaleDateString("tr-TR") : "-"}</td>
+                                                <td><span class="badge bg-dark">${c.carcassNo || "-"}</span></td>
+                                                <td class="text-end">${Number(c.inputQuantity).toFixed(2)}</td>
+                                                <td class="text-end fw-bold text-success">${Number(c.outputQuantity).toFixed(2)}</td>
+                                                <td class="text-center">%${Number(c.yieldRate).toFixed(2)}</td>
+                                                <td>${c.depoAdi || "-"}</td>
+                                            </tr>
+                                        `).join("")}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>`;
+                }
+
+                if (dto.carcasses && dto.carcasses.length > 0) {
+                    html += `
+                        <div class="card mb-3 border-0 shadow-sm">
+                            <div class="card-header bg-white fw-bold text-success border-bottom">
+                                <i class="bi bi-shield-check me-1"></i> Kaynak Karkas, Canlı Hayvan & Veterinerlik (${dto.carcasses.length} Adet)
+                            </div>
+                            <div class="card-body p-0 table-responsive">
+                                <table class="table table-sm table-bordered mb-0 align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Karkas No</th>
+                                            <th>Küpe No / Irk</th>
+                                            <th class="text-end">Karkas Ağırlık</th>
+                                            <th>Üretici (Çiftçi)</th>
+                                            <th>Nakliye / Plaka</th>
+                                            <th>Veteriner Ante-Mortem</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${dto.carcasses.map(k => `
+                                            <tr>
+                                                <td>
+                                                    <span class="badge bg-secondary">${k.carcassNo}</span>${k.lotNo ? `<br/><small class="text-muted">Lot: ${k.lotNo}</small>` : ''}
+                                                </td>
+                                                <td>
+                                                    <strong>${k.earTagNo || "-"}</strong><br/>
+                                                    <small class="text-muted">${k.animalType || ""}</small>
+                                                </td>
+                                                <td class="text-end fw-bold">${Number(k.actualCarcassWeight).toFixed(2)} kg</td>
+                                                <td>
+                                                    ${k.producerName || "-"}<br/>
+                                                    <small class="text-muted">${k.producerCode || ""}</small>
+                                                </td>
+                                                <td>
+                                                    <strong>${k.plateNumber || "-"}</strong><br/>
+                                                    <small class="text-muted">${k.driverName || ""}</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge ${k.anteMortemResult === 'FitForSlaughter' || k.anteMortemResult === 'Uygun' ? 'bg-success' : 'bg-primary'}">
+                                                        ${k.anteMortemResult || "Uygun"}
+                                                    </span><br/>
+                                                    <small class="text-muted">Vet: ${k.anteMortemVeterinarianName || "-"}</small>
+                                                </td>
+                                            </tr>
+                                        `).join("")}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>`;
+                }
+
+                if (dto.materials && dto.materials.length > 0) {
+                    html += `
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white fw-bold text-dark border-bottom">
+                                <i class="bi bi-box me-1 text-warning"></i> Kullanılan Hammaddeler & Mal Kabul
+                            </div>
+                            <div class="card-body p-0 table-responsive">
+                                <table class="table table-sm table-striped mb-0 align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Hammadde</th>
+                                            <th>Lot No</th>
+                                            <th class="text-end">Miktar</th>
+                                            <th>Tedarikçi</th>
+                                            <th>SKT</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${dto.materials.map(m => `
+                                            <tr>
+                                                <td>${m.stockCode} -${m.stockName}</td>
+                                                <td><strong>${m.lotNo || m.goodsReceiptLotNo}</strong></td>
+                                                <td class="text-end">${Number(m.quantity).toFixed(2)}</td>
+                                                <td>${m.supplier || "-"}</td>
+                                                <td>${m.expiryDate ? new Date(m.expiryDate).toLocaleDateString("tr-TR") : "-"}</td>
+                                            </tr>
+                                        `).join("")}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>`;
+                }
+
+                bodyEl.innerHTML = html;
+            }
+        });
+    </script>
+}

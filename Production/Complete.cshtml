@@ -1,0 +1,489 @@
+﻿@model Kalite.Contracts.Production.Responses.ProductionDetailDto
+
+@{
+    ViewData["Title"] = "Üretimi Tamamla";
+
+    var productionDate = Model.ProductionDate.ToString("yyyy-MM-dd");
+}
+
+<div class="container-fluid">
+
+    <div class="card shadow-sm">
+
+        <!-- HEADER -->
+        <div class="card-header bg-success text-white">
+
+            <div class="d-flex align-items-center">
+
+                <i class="bi bi-check-circle me-2"></i>
+
+                <strong>Üretimi Tamamla</strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- FORM -->
+        <form asp-controller="Production"
+              asp-action="Complete"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   name="ProductionId"
+                   value="@Model.Id" />
+
+
+            <div class="card-body">
+
+                <!-- ÜRETİM BİLGİLERİ -->
+                <div class="row mb-4">
+
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Üretim No
+                        </label>
+
+                        <input type="text"
+                               class="form-control"
+                               value="@Model.ProductionNo"
+                               readonly />
+
+                    </div>
+
+
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Reçete
+                        </label>
+
+                        <input type="text"
+                               class="form-control"
+                               value="@Model.RecipeName"
+                               readonly />
+
+                    </div>
+
+
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Mamul
+                        </label>
+
+                        <input type="text"
+                               class="form-control"
+                               value="@Model.FinishedStockName"
+                               readonly />
+
+                    </div>
+
+                </div>
+
+
+                <!-- MİKTAR BİLGİLERİ -->
+                <div class="row mb-4">
+
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Planlanan Miktar (Kg)
+                        </label>
+
+                        <input type="text"
+                               class="form-control"
+                               value="@Model.PlannedQuantity.ToString("N3")"
+                               readonly />
+
+                    </div>
+
+
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Gerçek Üretim (Kg)
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="number"
+                               class="form-control"
+                               name="ProducedQuantity"
+                               id="ProducedQuantity"
+                               min="0.001"
+                               step="0.001"
+                               max="@Model.PlannedQuantity"
+                               required />
+
+                        <div class="form-text">
+                            Planlanan miktar:
+                            @Model.PlannedQuantity.ToString("N3") Kg
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-4">
+
+                        <label class="form-label">
+                            Fire (Kg)
+                        </label>
+
+                        <input type="text"
+                               class="form-control"
+                               id="WasteQuantity"
+                               value="0.000"
+                               readonly />
+
+                    </div>
+
+                </div>
+
+
+                <!-- TARİH / DEPO -->
+                <div class="row mb-4">
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Üretim Tarihi
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <input type="date"
+                               class="form-control"
+                               name="ProductionDate"
+                               value="@productionDate"
+                               required />
+
+                    </div>
+
+
+                    <div class="col-md-6">
+
+                        <label class="form-label">
+                            Mamul Deposu
+                            <span class="text-danger">*</span>
+                        </label>
+
+                        <select class="form-select"
+                                name="DepoId"
+                                id="DepoId"
+                                required>
+
+                            <option value="">
+                                -- Depo Seçiniz --
+                            </option>
+
+                            @if (ViewBag.Depolar != null)
+                            {
+                                foreach (var depo in ViewBag.Depolar)
+                                {
+                                    <option value="@depo.Id">
+                                        @depo.DepoAdi
+                                    </option>
+                                }
+                            }
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <!-- AÇIKLAMA -->
+                <div class="mb-4">
+
+                    <label class="form-label">
+                        Açıklama
+                    </label>
+
+                    <textarea class="form-control"
+                              name="Description"
+                              rows="4"
+                              placeholder="Üretim ile ilgili açıklama..."></textarea>
+
+                </div>
+
+
+                <!-- BİLGİ -->
+                <div class="alert alert-info">
+
+                    <i class="bi bi-info-circle me-2"></i>
+
+                    Üretim tamamlandığında;
+
+                    <ul class="mb-0 mt-2">
+
+                        <li>Mamul stok kaydı oluşturulacaktır.</li>
+
+                        <li>Yeni Lot No oluşturulacaktır.</li>
+
+                        <li>Mamul stok hareketi oluşturulacaktır.</li>
+
+                        <li>Ürün etiketi oluşturulacaktır.</li>
+
+                        <li>Üretim durumu <strong>Tamamlandı</strong> olacaktır.</li>
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+
+            <!-- FOOTER -->
+            <div class="card-footer d-flex justify-content-between">
+
+                <a asp-controller="Production"
+                       asp-action="Index"
+                       class="btn btn-secondary">
+
+                    <i class="bi bi-arrow-left me-1"></i>
+
+                    Geri Dön
+
+                </a>
+
+
+                <button type="submit"
+                        class="btn btn-success"
+                        id="btnComplete">
+
+                    <i class="bi bi-check-circle me-1"></i>
+
+                    Üretimi Tamamla
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+@section Scripts
+{
+    <script>
+
+        $(document).ready(function () {
+
+            // ==========================================
+            // FIRE HESAPLA
+            // ==========================================
+
+            $("#ProducedQuantity").on("input", function () {
+
+                const planned =
+                    parseFloat("@Model.PlannedQuantity") || 0;
+
+                const produced =
+                    parseFloat($(this).val()) || 0;
+
+                let waste = planned - produced;
+
+                if (waste < 0) {
+                    waste = 0;
+                }
+
+                $("#WasteQuantity").val(
+                    waste.toFixed(3)
+                );
+            });
+
+
+            // ==========================================
+            // ÜRETİM TAMAMLA
+            // ==========================================
+
+            $("form").on("submit", async function (e) {
+
+                e.preventDefault();
+
+                const planned =
+                    parseFloat("@Model.PlannedQuantity") || 0;
+
+                const produced =
+                    parseFloat($("#ProducedQuantity").val()) || 0;
+
+                const depoId =
+                    parseInt($("#DepoId").val()) || 0;
+
+                const productionDate =
+                    $("input[name='ProductionDate']").val();
+
+                const description =
+                    $("textarea[name='Description']").val();
+
+
+                // ==========================================
+                // VALIDATION
+                // ==========================================
+
+                if (produced <= 0) {
+
+                    alert(
+                        "Gerçek üretim miktarı girilmelidir."
+                    );
+
+                    return;
+                }
+
+                if (produced > planned) {
+
+                    alert(
+                        "Gerçek üretim miktarı planlanan miktardan büyük olamaz."
+                    );
+
+                    return;
+                }
+
+                if (depoId <= 0) {
+
+                    alert(
+                        "Mamul deposu seçilmelidir."
+                    );
+
+                    return;
+                }
+
+
+                // ==========================================
+                // FIRE
+                // ==========================================
+
+                let waste = planned - produced;
+
+                if (waste < 0) {
+                    waste = 0;
+                }
+
+
+                // ==========================================
+                // JSON REQUEST
+                // ==========================================
+
+                const request = {
+
+                    productionId: @Model.Id,
+
+                    producedQuantity: produced,
+
+                    productionDate: productionDate,
+
+                    depoId: depoId,
+
+                    wasteQuantity: waste,
+
+                    description: description
+                };
+
+
+                console.log(
+                    "COMPLETE REQUEST:",
+                    request
+                );
+
+
+                // ==========================================
+                // BUTTON
+                // ==========================================
+
+                const button =
+                    $("#btnComplete");
+
+                button
+                    .prop("disabled", true)
+                    .html(
+                        '<span class="spinner-border spinner-border-sm me-1"></span>' +
+                        'Üretim tamamlanıyor...'
+                    );
+
+
+                try {
+
+                    // ======================================
+                    // API'YE JSON GÖNDER
+                    // ======================================
+
+                    const response = await fetch(
+                        `/Production/Complete?id=${@Model.Id}`,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify(request)
+                        }
+                    );
+
+
+                    const result =
+                        await response.json();
+
+
+                    console.log(
+                        "COMPLETE RESPONSE:",
+                        result
+                    );
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            result.message ||
+                            "Üretim tamamlanamadı."
+                        );
+                    }
+
+
+                    // ======================================
+                    // BAŞARILI
+                    // ======================================
+
+                    alert(
+                        result.message ||
+                        "Üretim başarıyla tamamlandı."
+                    );
+
+
+                    window.location.href =
+                        "/Production/Index";
+
+                }
+                catch (error) {
+
+                    console.error(
+                        "COMPLETE ERROR:",
+                        error
+                    );
+
+                    alert(
+                        error.message ||
+                        "Üretim tamamlanırken hata oluştu."
+                    );
+
+                    button
+                        .prop("disabled", false)
+                        .html(
+                            '<i class="bi bi-check-circle me-1"></i>' +
+                            'Üretimi Tamamla'
+                        );
+                }
+
+            });
+
+        });
+
+    </script>
+}

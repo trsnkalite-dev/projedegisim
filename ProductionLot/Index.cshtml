@@ -1,0 +1,365 @@
+﻿@model IReadOnlyCollection<Kalite.Application.Features.ProductionLots.Queries.GetList.ProductionLotListDto>
+
+
+
+@{
+    ViewData["Title"] = "Üretim Alt Lotları";
+
+    var firstLot = Model?.FirstOrDefault();
+}
+
+<div class="container-fluid">
+
+    <div class="card shadow-sm mb-4">
+
+        <!-- ===================================================== -->
+        <!-- BAŞLIK -->
+        <!-- ===================================================== -->
+
+        <div class="card-header bg-success text-white
+                    d-flex justify-content-between align-items-center">
+
+            <h5 class="mb-0">
+                <i class="bi bi-diagram-3"></i>
+                Üretim Alt Lotları
+            </h5>
+
+            @if (firstLot != null)
+            {
+                <a asp-controller="ProductionLot"
+                   asp-action="Create"
+                   asp-route-productionId="@firstLot.ProductionId"
+                   asp-route-productionNo="@firstLot.ProductionNo"
+                   asp-route-mainLotNo="@firstLot.MainLotNo"
+                   class="btn btn-light btn-sm">
+
+                    <i class="bi bi-plus-circle"></i>
+                    Yeni Alt Lot
+
+                </a>
+            }
+
+        </div>
+
+
+        <!-- ===================================================== -->
+        <!-- İÇERİK -->
+        <!-- ===================================================== -->
+
+        <div class="card-body">
+
+            @if (Model == null || !Model.Any())
+            {
+                <div class="alert alert-info">
+
+                    <i class="bi bi-info-circle"></i>
+
+                    Henüz alt lot bulunmamaktadır.
+
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+
+                    <table class="table table-bordered
+                                  table-hover
+                                  align-middle">
+
+                        <thead class="table-light">
+
+                            <tr>
+
+                                <th>
+                                    Üretim No
+                                </th>
+
+                                <!-- YENİ: ÜRÜN ADI -->
+                                <th>
+                                    Ürün Adı
+                                </th>
+
+                                <th>
+                                    Ana Lot No
+                                </th>
+
+                                <th>
+                                    Alt Lot No
+                                </th>
+
+                                <th class="text-end">
+                                    Miktar (Kg)
+                                </th>
+
+                                <th class="text-end">
+                                    Paketlenen (Kg)
+                                </th>
+
+                                <th class="text-end">
+                                    Kalan (Kg)
+                                </th>
+
+                                <th>
+                                    Depo
+                                </th>
+
+                                <th>
+                                    Durum
+                                </th>
+
+                                <th style="width:180px;">
+                                    İşlem
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @foreach (var lot in Model)
+                            {
+                                var remaining = lot.RemainingQuantity;
+
+                                var completed = remaining <= 0;
+
+                                <tr>
+
+                                    <!-- ================================= -->
+                                    <!-- ÜRETİM NO -->
+                                    <!-- ================================= -->
+
+                                    <td>
+
+                                        <strong>
+                                            @lot.ProductionNo
+                                        </strong>
+
+                                    </td>
+
+
+                                    <!-- ================================= -->
+                                    <!-- ÜRÜN ADI -->
+                                    <!-- ================================= -->
+
+                                    <td>
+
+                                        @if (!string.IsNullOrWhiteSpace(lot.ProductName))
+                                        {
+                                            <strong>
+                                                @lot.ProductName
+                                            </strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">
+                                                -
+                                            </span>
+                                        }
+
+                                    </td>
+
+
+                                    <!-- ================================= -->
+                                    <!-- ANA LOT -->
+                                    <!-- ================================= -->
+
+                                    <td>
+
+                                        @if (!string.IsNullOrWhiteSpace(lot.MainLotNo))
+                                        {
+                                            <span class="badge bg-secondary">
+                                                @lot.MainLotNo
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">
+                                                -
+                                            </span>
+                                        }
+
+                                    </td>
+
+
+                                    <!-- ================================= -->
+                                    <!-- ALT LOT -->
+                                    <!-- ================================= -->
+
+                                    <td>
+
+                                        <span class="badge bg-primary">
+
+                                            @lot.SubLotNo
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- ================================= -->
+                                    <!-- MİKTAR -->
+                                    <!-- ================================= -->
+
+                                    <td class="text-end">
+
+                                        @lot.Quantity.ToString("N3")
+
+                                    </td>
+
+
+                                    <!-- ================================= -->
+                                    <!-- PAKETLENEN -->
+                                    <!-- ================================= -->
+
+                                    <td class="text-end">
+
+                                        @lot.PackagedQuantity.ToString("N3")
+
+                                    </td>
+
+
+                                    <!-- ================================= -->
+                                    <!-- KALAN -->
+                                    <!-- ================================= -->
+
+                                    <td class="text-end">
+
+                                        @if (remaining > 0)
+                                        {
+                                            <span class="text-danger fw-bold">
+
+                                                @remaining.ToString("N3")
+
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success fw-bold">
+
+                                                0.000
+
+                                            </span>
+                                        }
+
+                                    </td>
+
+
+                                    <!-- ================================= -->
+                                    <!-- DEPO -->
+                                    <!-- ================================= -->
+
+                                    <td>
+
+                                        @if (!string.IsNullOrWhiteSpace(lot.DepoAdi))
+                                        {
+                                            @lot.DepoAdi
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">
+                                                Depo belirtilmemiş
+                                            </span>
+                                        }
+
+                                    </td>
+
+
+                                    <!-- ================================= -->
+                                    <!-- DURUM -->
+                                    <!-- ================================= -->
+
+                                    <td>
+
+                                        @if (completed)
+                                        {
+                                            <span class="badge bg-success">
+
+                                                Paketleme Tamamlandı
+
+                                            </span>
+                                        }
+                                        else if (lot.IsActive)
+                                        {
+                                            <span class="badge bg-warning text-dark">
+
+                                                Paketleme Bekliyor
+
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+
+                                                Pasif
+
+                                            </span>
+                                        }
+
+                                    </td>
+
+
+                                    <!-- ================================= -->
+                                    <!-- İŞLEMLER -->
+                                    <!-- ================================= -->
+
+                                  
+
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+
+                                            @if (remaining > 0 && lot.IsActive)
+                                            {
+                                                <!-- PAKETLE -->
+                                                <a asp-controller="ProductionPackaging"
+                                                   asp-action="Create"
+                                                   asp-route-productionLotId="@lot.Id"
+                                                   class="btn btn-outline-primary"
+                                                   title="Yeni paketleme oluştur">
+
+                                                    <i class="bi bi-box-seam"></i>
+                                                    Paketle
+
+                                                </a>
+                                            }
+
+                                            <!-- PAKETLEME INDEX -->
+                                            <a asp-controller="ProductionPackaging"
+                                               asp-action="Index"
+                                               asp-route-productionLotId="@lot.Id"
+                                               class="btn btn-outline-success"
+                                               title="Bu alt lotun paketlemelerini görüntüle">
+
+                                                <i class="bi bi-list-check"></i>
+                                                Paketleme
+
+                                            </a>
+
+                                            @if (remaining <= 0)
+                                            {
+                                                <span class="btn btn-outline-secondary disabled">
+                                                    <i class="bi bi-check-circle"></i>
+                                                    Tamamlandı
+                                                </span>
+                                            }
+
+                                        </div>
+                                    </td>
+
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+</div>

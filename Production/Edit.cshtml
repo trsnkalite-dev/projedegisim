@@ -1,0 +1,363 @@
+﻿@model Kalite.Contracts.Production.Responses.ProductionDetailDto
+
+@{
+    ViewData["Title"] = "Üretim Düzenle";
+}
+
+<div class="card shadow-sm">
+
+    <div class="card-header bg-warning">
+
+        <h5 class="mb-0">
+            <i class="bi bi-pencil-square me-2"></i>
+            Üretim Düzenle
+        </h5>
+
+    </div>
+
+    <div class="card-body">
+
+        <form id="editProductionForm">
+
+            <!-- ID -->
+            <input type="hidden"
+                   id="ProductionId"
+                   name="Id"
+                   value="@Model.Id" />
+
+
+            <!-- ===================================================== -->
+            <!-- ANA BİLGİLER -->
+            <!-- ===================================================== -->
+
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">
+                        Üretim No
+                    </label>
+
+                    <input type="text"
+                           class="form-control"
+                           value="@Model.ProductionNo"
+                           readonly />
+
+                </div>
+
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">
+                        Reçete
+                    </label>
+
+                    <input type="text"
+                           class="form-control"
+                           value="@Model.RecipeName"
+                           readonly />
+
+                </div>
+
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">
+                        Durum
+                    </label>
+
+                    <input type="text"
+                           class="form-control"
+                           value="@Model.Status"
+                           readonly />
+
+                </div>
+
+            </div>
+
+
+            <!-- ===================================================== -->
+            <!-- ÜRETİM BİLGİLERİ -->
+            <!-- ===================================================== -->
+
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">
+                        Planlanan Miktar
+                    </label>
+
+                    <input id="PlannedQuantity"
+                           name="PlannedQuantity"
+                           type="number"
+                           step="0.001"
+                           min="0.001"
+                           class="form-control"
+                           value="@Model.PlannedQuantity.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+
+                </div>
+
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">
+                        Üretim Tarihi
+                    </label>
+
+                    <input id="ProductionDate"
+                           name="ProductionDate"
+                           type="date"
+                           class="form-control"
+                           value="@Model.ProductionDate.ToString("yyyy-MM-dd")" />
+
+                </div>
+
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">
+                        Mamul
+                    </label>
+
+                    <input type="text"
+                           class="form-control"
+                           value="@Model.FinishedStockName"
+                           readonly />
+
+                </div>
+
+            </div>
+
+
+            <!-- ===================================================== -->
+            <!-- ÜRETİLEN / RANDIMAN / LOT -->
+            <!-- ===================================================== -->
+
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">
+                        Üretilen Miktar
+                    </label>
+
+                    <input type="text"
+                           class="form-control text-end"
+                           value="@Model.ProducedQuantity.ToString("N3")"
+                           readonly />
+
+                </div>
+
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">
+                        Randıman
+                    </label>
+
+                    <input type="text"
+                           class="form-control text-end"
+                           value="@Model.YieldRate.ToString("N2") %"
+                           readonly />
+
+                </div>
+
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">
+                        Lot No
+                    </label>
+
+                    <input type="text"
+                           class="form-control"
+                           value="@Model.LotNo"
+                           readonly />
+
+                </div>
+
+            </div>
+
+
+            <!-- ===================================================== -->
+            <!-- AÇIKLAMA -->
+            <!-- ===================================================== -->
+
+            <div class="row">
+
+                <div class="col-md-12 mb-3">
+
+                    <label class="form-label">
+                        Açıklama
+                    </label>
+
+                    <textarea id="Description"
+                              name="Description"
+                              class="form-control"
+                              rows="3">@Model.Description</textarea>
+
+                </div>
+
+            </div>
+
+
+            <hr />
+
+
+            <!-- ===================================================== -->
+            <!-- HAMMADDE TÜKETİMLERİ -->
+            <!-- ===================================================== -->
+
+            <div class="card mb-3">
+
+                <div class="card-header bg-light">
+
+                    <strong>
+                        <i class="bi bi-box-seam me-2"></i>
+                        Hammadde Tüketimleri
+                    </strong>
+
+                </div>
+
+
+                <div class="card-body p-0">
+
+                    <div class="table-responsive">
+
+                        <table class="table table-bordered table-sm mb-0">
+
+                            <thead class="table-light">
+
+                                <tr>
+
+                                    <th>
+                                        Kod
+                                    </th>
+
+                                    <th>
+                                        Hammadde
+                                    </th>
+
+                                    <th>
+                                        Lot
+                                    </th>
+
+                                    <th class="text-end">
+                                        Miktar
+                                    </th>
+
+                                    <th>
+                                        Birim
+                                    </th>
+
+                                    <th>
+                                        Depo
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+                                @if (Model.Consumptions != null &&
+                                     Model.Consumptions.Any())
+                                {
+                                    foreach (var consumption in Model.Consumptions)
+                                    {
+                                        <tr>
+
+                                            <td>
+                                                @consumption.StockCode
+                                            </td>
+
+                                            <td>
+                                                @consumption.StockName
+                                            </td>
+
+                                            <td>
+                                                @consumption.LotNo
+                                            </td>
+
+                                            <td class="text-end">
+                                                @consumption.Quantity.ToString("N3")
+                                            </td>
+
+                                            <td>
+                                                @consumption.Unit
+                                            </td>
+
+                                            <td>
+                                                @consumption.DepoName
+                                            </td>
+
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+
+                                        <td colspan="6"
+                                            class="text-center text-muted py-3">
+
+                                            Hammadde tüketimi bulunamadı.
+
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ===================================================== -->
+            <!-- BUTONLAR -->
+            <!-- ===================================================== -->
+
+            <div class="d-flex justify-content-between">
+
+                <a asp-action="Index"
+                       class="btn btn-secondary">
+
+                    <i class="bi bi-arrow-left me-1"></i>
+
+                    Geri Dön
+
+                </a>
+
+
+                <button type="submit"
+                        id="btnUpdateProduction"
+                        class="btn btn-warning">
+
+                    <i class="bi bi-save me-1"></i>
+
+                    Değişiklikleri Kaydet
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <script src="~/js/production.js"></script>
+
+}

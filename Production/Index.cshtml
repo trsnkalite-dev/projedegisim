@@ -1,0 +1,166 @@
+﻿@model List<Kalite.Contracts.Production.Responses.ProductionListDto>
+
+@{
+    ViewData["Title"] = "Üretim Yönetimi";
+}
+
+<div class="container-fluid">
+
+    <!-- Header -->
+    <div class="card shadow-sm mb-3">
+
+        <div class="card-body">
+
+            <div class="row align-items-center">
+
+                <div class="col-md-6">
+
+                    <h3 class="mb-0">
+                        <i class="bi bi-gear-fill text-primary"></i>
+
+                        Üretim Yönetimi
+                    </h3>
+
+                    <small class="text-muted">
+                        Üretim Planlama • Başlatma • Tamamlama • İzlenebilirlik
+                    </small>
+
+                </div>
+
+                <div class="col-md-6 text-end">
+
+                    <button type="button"
+                            id="btnRefresh"
+                            class="btn btn-outline-secondary">
+
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Yenile
+
+                    </button>
+
+                    <button type="button"
+                            id="btnNewProduction"
+                            class="btn btn-primary">
+
+                        <i class="bi bi-plus-circle"></i>
+                        Yeni Üretim
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Filtre -->
+    <div class="card shadow-sm mb-3">
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-3">
+
+                    <label class="form-label">
+
+                        Üretim No
+
+                    </label>
+
+                    <input id="SearchProductionNo"
+                           class="form-control" />
+
+                </div>
+
+                <div class="col-md-3">
+
+                    <label class="form-label">
+
+                        Reçete
+
+                    </label>
+
+                    <input id="SearchRecipe"
+                           class="form-control" />
+
+                </div>
+
+                <div class="col-md-2">
+
+                    <label class="form-label">
+
+                        Durum
+
+                    </label>
+
+                    <select id="SearchStatus"
+                            class="form-select">
+
+                        <option value="">Tümü</option>
+
+                        <option value="1">Planlandı</option>
+
+                        <option value="2">Üretimde</option>
+
+                        <option value="3">Tamamlandı</option>
+
+                        <option value="4">İptal</option>
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-2">
+
+                    <label class="form-label">
+
+                        Tarih
+
+                    </label>
+
+                    <input id="SearchDate"
+                           type="date"
+                           class="form-control" />
+
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+
+                    <button type="button"
+                            id="btnSearch"
+                            class="btn btn-success">
+
+                        <i class="bi bi-search"></i>
+                        Ara
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Liste -->
+
+    <div id="productionList">
+
+        <partial name="_ProductionTable"
+                 model="Model" />
+
+    </div>
+
+</div>
+
+<partial name="_CreateModal" />
+
+@section Scripts {
+    <script src="~/js/core/crud.js"></script>
+    <script src="~/js/production.js"></script>
+
+}

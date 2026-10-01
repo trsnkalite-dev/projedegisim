@@ -1,0 +1,302 @@
+﻿@using Kalite.Domain.Enums
+@model Kalite.Contracts.Production.Responses.ProductionDetailDto
+
+@{
+    ViewData["Title"] = "Üretim Detayı";
+    var firstLot = Model.Outputs?.FirstOrDefault();
+}
+
+<div class="container-fluid py-3">
+    <div class="card shadow-sm border-0">
+        <!-- HEADER -->
+        <div class="card-header bg-primary text-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <h4 class="mb-0 fw-bold">Üretim Detayı</h4>
+                    <span class="badge bg-light text-dark fs-6">@Model.ProductionNo</span>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <!-- YENİ LOT / MAMUL GİRİŞ BUTONU -->
+                    <button type="button" class="btn btn-light btn-sm fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#createLotModal">
+                        <i class="bi bi-plus-circle-fill text-primary me-1"></i> Yeni Mamul / Lot Ekle
+                    </button>
+
+                    @if (firstLot != null)
+                    {
+                        <a asp-controller="ProductionPackaging"
+                               asp-action="Create"
+                               asp-route-productionLotId="@firstLot.Id"
+                               class="btn btn-warning btn-sm fw-bold shadow-sm">
+                            <i class="bi bi-box-seam me-1"></i> Paketleme Yap
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-secondary btn-sm" disabled title="Henüz oluşan mamul/alt lot bulunmuyor. Lütfen önce mamul girişi yapınız.">
+                            <i class="bi bi-box-seam me-1"></i> Paketleme (Mamul Yok)
+                        </button>
+                    }
+
+                    <a asp-action="Index" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-arrow-left me-1"></i> Listeye Dön
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- BODY -->
+        <div class="card-body p-4">
+            <!-- 1. BİLGİ SATIRI -->
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="fw-bold text-muted small">Üretim No</label>
+                    <div class="fw-semibold fs-6">@Model.ProductionNo</div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="fw-bold text-muted small">Tarih</label>
+                    <div class="fs-6">@Model.ProductionDate.ToString("dd.MM.yyyy")</div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="fw-bold text-muted small">Reçete</label>
+                    <div class="fs-6">@Model.RecipeName</div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="fw-bold text-muted small">Mamul</label>
+                    <div class="text-primary fw-bold fs-6">@Model.FinishedStockName</div>
+                </div>
+            </div>
+
+            <hr />
+
+            <!-- 2. BİLGİ SATIRI -->
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="fw-bold text-muted small">Planlanan Miktar</label>
+                    <div class="fs-6">@Model.PlannedQuantity.ToString("N3") Kg</div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="fw-bold text-muted small">Üretilen (Gerçekleşen)</label>
+                    <div class="fw-bold fs-6 @(Model.ProducedQuantity > 0 ? "text-success" : "text-muted")">
+                        @Model.ProducedQuantity.ToString("N3") Kg
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="fw-bold text-muted small">Verim Oranı</label>
+                    <div class="fw-semibold fs-6">% @Model.YieldRate</div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="fw-bold text-muted small">Durum</label>
+                    <div>
+                        @switch (Model.Status)
+                        {
+                            case ProductionStatus.Planned:
+                                <span class="badge bg-warning text-dark">Planlandı</span>
+                                break;
+                            case ProductionStatus.Started:
+                                <span class="badge bg-primary">Üretimde</span>
+                                break;
+                            case ProductionStatus.Completed:
+                                <span class="badge bg-success">Tamamlandı</span>
+                                break;
+                            case ProductionStatus.Cancelled:
+                                <span class="badge bg-danger">İptal</span>
+                                break;
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Description))
+            {
+                <div class="mt-3">
+                    <label class="fw-bold text-muted small">Açıklama</label>
+                    <div class="border rounded p-2 bg-light text-secondary">
+                        @Model.Description
+                    </div>
+                </div>
+            }
+
+            <hr class="my-4" />
+
+            <!-- TAB ALANLARI -->
+            <ul class="nav nav-tabs" id="productionTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active fw-semibold" data-bs-toggle="tab" data-bs-target="#consumptionTab">
+                        <i class="bi bi-box-seam me-1"></i> Hammadde Tüketimi
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#outputTab">
+                        <i class="bi bi-box-fill me-1"></i> Oluşan Mamuller
+                        @if (Model.Outputs != null && Model.Outputs.Any())
+                        {
+                            <span class="badge bg-success ms-1">@Model.Outputs.Count</span>
+                        }
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#traceTab">
+                        <i class="bi bi-diagram-3 me-1"></i> İzlenebilirlik
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content mt-3">
+                <!-- 1. HAMMADDE TÜKETİMİ -->
+                <div class="tab-pane fade show active" id="consumptionTab">
+                    <partial name="_ConsumptionTable" model="Model.Consumptions" />
+                </div>
+
+                <!-- 2. OLUŞAN MAMULLER (LOTLAR) -->
+                <div class="tab-pane fade" id="outputTab">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small">Tartımı tamamlanan mamul partileri (Alt Lotlar)</span>
+                        <button type="button" class="btn btn-sm btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#createLotModal">
+                            <i class="bi bi-plus-circle me-1"></i> Yeni Mamul / Lot Girişi
+                        </button>
+                    </div>
+                    <partial name="_OutputTable" model="Model.Outputs" />
+                </div>
+
+                <!-- 3. İZLENEBİLİRLİK -->
+                <div class="tab-pane fade" id="traceTab">
+                    <div class="alert alert-info border-0 shadow-sm">
+                        <i class="bi bi-info-circle me-2"></i> Bu partinin karkas ve canlı hayvan küpe izlenebilirlik haritası koli bazlı olarak takip edilmektedir.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================= -->
+<!-- YENİ MAMUL / LOT GİRİŞ MODALI                             -->
+<!-- ========================================================= -->
+<div class="modal fade" id="createLotModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-box-arrow-in-down text-primary me-2"></i>Üretilen Mamul / Lot Girişi</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="lotProductionId" value="@Model.Id" />
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Ürün / Mamul</label>
+                    <input type="text" class="form-control bg-light" value="@Model.FinishedStockName" readonly />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Alt Lot No *</label>
+                    <input type="text" id="txtSubLotNo" class="form-control" value="@Model.ProductionNo-L01" placeholder="Örn: @Model.ProductionNo-L01" required />
+                    <div class="form-text">Parti takibi ve etiket için kullanılacak alt parti kodu.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Üretilen Net Miktar (Kg) *</label>
+                    <input type="number" step="0.001" id="txtLotQuantity" class="form-control form-control-lg fw-bold text-success" value="@Model.PlannedQuantity.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)" placeholder="0.000" required />
+                    <div class="form-text">Teraziden çıkan net tartım kilogramını giriniz.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold small">Mamul Deposu *</label>
+                    <select id="ddlLotDepoId" class="form-select" required>
+                        <option value="1">Mamul Soğuk Hava Deposu</option>
+                    </select>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label fw-bold small">Açıklama / Not</label>
+                    <input type="text" id="txtLotDescription" class="form-control" placeholder="Vardiya, yoğurma kazanı veya operatör notu..." />
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Vazgeç</button>
+                <button type="button" class="btn btn-primary fw-bold px-4" onclick="saveProductionLot()">
+                    <i class="bi bi-save me-1"></i> Mamul Girişini Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function saveProductionLot() {
+        const productionId = parseInt(document.getElementById('lotProductionId').value);
+        const subLotNo = document.getElementById('txtSubLotNo').value.trim();
+        const quantity = parseFloat(document.getElementById('txtLotQuantity').value);
+        const depoId = parseInt(document.getElementById('ddlLotDepoId').value);
+        const description = document.getElementById('txtLotDescription').value.trim();
+
+        if (!subLotNo) {
+        Swal.fire('Eksik Bilgi', 'Lütfen Alt Lot No alanını doldurunuz.', 'warning');
+        return;
+        }
+
+        if (isNaN(quantity) || quantity <= 0) {
+        Swal.fire('Eksik Bilgi', 'Lütfen geçerli bir üretilen miktar (Kg) giriniz.', 'warning');
+        return;
+        }
+
+        const payload = {
+        productionId: productionId,
+        subLotNo: subLotNo,
+        quantity: quantity,
+        depoId: depoId,
+        description: description
+        };
+
+        // /ProductionLot/CreateAjax endpoint'ine JSON gönderimi
+        fetch('/ProductionLot/CreateAjax', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+        })
+        .then(async res => {
+        const text = await res.text();
+        let data = null;
+        try {
+        data = text ? JSON.parse(text) : {};
+        } catch (e) {
+        throw new Error(`Sunucu Hatası (${res.status}): ${text.substring(0, 150)}`);
+        }
+
+        if (!res.ok || (data && data.success === false)) {
+        throw new Error((data && data.message) ? data.message : `İşlem başarısız oldu (${res.status})`);
+        }
+        return data;
+        })
+        .then(data => {
+        Swal.fire({
+        icon: 'success',
+        title: 'Mamul Kaydedildi!',
+        text: 'Üretim lot kaydı başarıyla oluşturuldu.',
+        timer: 1500,
+        showConfirmButton: false
+        }).then(() => {
+        window.location.reload();
+        });
+        })
+        .catch(err => {
+        Swal.fire({
+        icon: 'error',
+        title: 'Hata',
+        text: err.message
+        });
+        });
+        }
+    </script>
+}

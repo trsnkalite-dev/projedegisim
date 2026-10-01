@@ -1,0 +1,307 @@
+﻿@model Kalite.Application.Features.ProductionPackagings.Queries.GetById.ProductionPackagingDetailDto
+@{
+    ViewData["Title"] = "Paketleme Detayı";
+}
+
+
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h3 class="mb-1">
+                <i class="bi bi-box-seam me-2"></i>
+                Paketleme Detayı
+            </h3>
+
+            <div class="text-muted">
+                @Model.PackageNo
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+
+            <a asp-action="Edit"
+               asp-route-id="@Model.Id"
+               class="btn btn-primary">
+
+                <i class="bi bi-pencil me-1"></i>
+                Düzenle
+
+            </a>
+
+            <a asp-action="Index"
+               class="btn btn-outline-secondary">
+
+                <i class="bi bi-arrow-left me-1"></i>
+                Listeye Dön
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <div class="row g-4">
+
+        <!-- ÜRETİM BİLGİLERİ -->
+        <div class="col-lg-6">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-header">
+                    <strong>
+                        <i class="bi bi-gear me-2"></i>
+                        Üretim Bilgileri
+                    </strong>
+                </div>
+
+                <div class="card-body">
+
+                    <dl class="row mb-0">
+
+                        <dt class="col-sm-5">
+                            Ürün
+                        </dt>
+
+                        <dd class="col-sm-7">
+                            @Model.ProductName
+                        </dd>
+
+
+                        <dt class="col-sm-5">
+                            Üretim No
+                        </dt>
+
+                        <dd class="col-sm-7">
+                            @Model.ProductionNo
+                        </dd>
+
+
+                        <dt class="col-sm-5">
+                            Ana Lot
+                        </dt>
+
+                        <dd class="col-sm-7">
+                            @Model.MainLotNo
+                        </dd>
+
+
+                        <dt class="col-sm-5">
+                            Alt Lot
+                        </dt>
+
+                        <dd class="col-sm-7">
+                            @Model.SubLotNo
+                        </dd>
+
+                    </dl>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- PAKET BİLGİLERİ -->
+        <div class="col-lg-6">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-header">
+                    <strong>
+                        <i class="bi bi-box-seam me-2"></i>
+                        Paket Bilgileri
+                    </strong>
+                </div>
+
+                <div class="card-body">
+
+                    <dl class="row mb-0">
+
+                        <dt class="col-sm-5">
+                            Paket No
+                        </dt>
+
+                        <dd class="col-sm-7">
+                            <strong>
+                                @Model.PackageNo
+                            </strong>
+                        </dd>
+
+
+                        <dt class="col-sm-5">
+                            Miktar
+                        </dt>
+
+                        <dd class="col-sm-7">
+                            @Model.Quantity.ToString("N3") kg
+                        </dd>
+
+
+                        <dt class="col-sm-5">
+                            Ürün Sıcaklığı
+                        </dt>
+
+                        <dd class="col-sm-7">
+                            @(Model.ProductTemperature.HasValue
+                                                        ? $"{Model.ProductTemperature:N1} °C"
+                                                        : "-")
+                        </dd>
+
+
+                        <dt class="col-sm-5">
+                            Paketleme Tarihi
+                        </dt>
+
+                        <dd class="col-sm-7">
+                            @Model.PackagingDate.ToString("dd.MM.yyyy HH:mm")
+                        </dd>
+
+                    </dl>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- DEPO / SORUMLU -->
+        <div class="col-lg-6">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-header">
+                    <strong>
+                        <i class="bi bi-building me-2"></i>
+                        Depo ve Sorumlu
+                    </strong>
+                </div>
+
+                <div class="card-body">
+
+                    <dl class="row mb-0">
+
+                        <dt class="col-sm-5">
+                            Depo
+                        </dt>
+
+                        <dd class="col-sm-7">
+                            @(!string.IsNullOrWhiteSpace(Model.DepoAdi)
+                                                        ? Model.DepoAdi
+                                                        : "-")
+                        </dd>
+
+
+                        <dt class="col-sm-5">
+                            Sorumlu Alan
+                        </dt>
+
+                        <dd class="col-sm-7">
+                            @(!string.IsNullOrWhiteSpace(Model.ResponsibleAreaName)
+                                                        ? Model.ResponsibleAreaName
+                                                        : "-")
+                        </dd>
+
+
+                        <dt class="col-sm-5">
+                            Durum
+                        </dt>
+
+                        <dd class="col-sm-7">
+
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success">
+                                    Aktif
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">
+                                    Pasif
+                                </span>
+                            }
+
+                        </dd>
+
+                    </dl>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- BARKOD / AÇIKLAMA -->
+        <div class="col-lg-6">
+
+            <div class="card shadow-sm h-100">
+
+                <div class="card-header">
+                    <strong>
+                        <i class="bi bi-upc-scan me-2"></i>
+                        Barkod ve Açıklama
+                    </strong>
+                </div>
+
+                <div class="card-body">
+
+                    <dl class="row mb-0">
+
+                        <dt class="col-sm-5">
+                            Barkod
+                        </dt>
+
+                        <dd class="col-sm-7">
+
+                            @if (!string.IsNullOrWhiteSpace(Model.Barcode))
+                            {
+                                <code>
+                                    @Model.Barcode
+                                </code>
+                            }
+                            else
+                            {
+                                <span class="text-muted">
+                                    Barkod yok
+                                </span>
+                            }
+
+                        </dd>
+
+
+                        <dt class="col-sm-5">
+                            Açıklama
+                        </dt>
+
+                        <dd class="col-sm-7">
+
+                            @if (!string.IsNullOrWhiteSpace(Model.Description))
+                            {
+                                @Model.Description
+                            }
+                            else
+                            {
+                                <span class="text-muted">
+                                    -
+                                </span>
+                            }
+
+                        </dd>
+
+                    </dl>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
